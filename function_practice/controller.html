@@ -1,0 +1,24 @@
+<?php
+require_once(dirname(__DIR__) . "/object-oriented/tweet.php");
+require_once(dirname(dirname(__DIR__)) . "/lib/php/encrypted-config.php");
+require_once(dirname(dirname(__DIR__)) . "/lib/php/xsrf.php");
+
+try {
+	// ensure the fields are filled out
+	if(@isset($_POST["profileId"]) === false || @isset($_POST["tweetContent"]) === false) {
+		throw(new InvalidArgumentException("form values not complete. Verify the form and try again."));
+	}
+
+	// verify the XSRF challenge
+	if(session_status() !== PHP_SESSION_ACTIVE) {
+		session_start();
+	}
+	verifyXsrf();
+
+	// create the new tweet and insert into mySQL
+	$pdo = connectToEncryptedMySQL("/etc/apache2/data-design/dmcdonald21.ini");
+	$tweet = new Tweet(null, $_POST["profileId"], $_POST["tweetContent"]);
+	$tweet->insert($pdo);
+echo "<p class=\"alert alert-success\">Tweet (id = " . $tweet->getTweetId() . ") posted!</p>";
+}catch(Exception $exception) {
+echo "<p class=\"alert alert-danger\">Exception: " . $exception->getMessage() . "</p>";
